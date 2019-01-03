@@ -23,7 +23,7 @@ if you have any problems with migrating.
 ```elixir
   defp deps do
     [
-      {:recaptcha, "~> 2.0"},
+      {:recaptcha, "~> 2.3"},
     ]
   end
 ```
@@ -32,7 +32,7 @@ if you have any problems with migrating.
 
 ```elixir
   def application do
-    [ applications: [:recaptcha] ]
+    [ extra_applications: [:recaptcha] ]
   end
 ```
 
@@ -54,6 +54,7 @@ By default the public and private keys are loaded via the `RECAPTCHA_PUBLIC_KEY`
 
 Use `raw` (if you're using Phoenix.HTML) and `Recaptcha.Template.display/1` methods to render the captcha widget.
 
+For recaptcha with checkbox
 ```html
 <form name="someform" method="post" action="/somewhere">
   ...
@@ -62,13 +63,44 @@ Use `raw` (if you're using Phoenix.HTML) and `Recaptcha.Template.display/1` meth
 </form>
 ```
 
+For invisible recaptcha
+```html
+<form name="someform" method="post" action="/somewhere">
+  ...
+  <%= raw Recaptcha.Template.display(size: "invisible") %>
+</form>
+  ...
+```
+
+To change the position of the invisible recaptcha, use an option badge. See https://developers.google.com/recaptcha/docs/invisible on the date-badge.
+
+Since recaptcha loads Javascript code asynchronously, you cannot immediately submit the captcha form.
+If you have logic that needs to know if the captcha code has already been loaded (for example disabling submit button until fully loaded), it is possible to pass in a JS-callback that will be called once the captcha has finished loading.
+This can be done as follows:
+
+```html
+<form name="someform" method="post" action="/somewhere">
+  ...
+  <%= raw Recaptcha.Template.display(onload: "myOnLoadCallback") %>
+</form>
+  ...
+```
+
+And then in your JS code:
+
+```javascript
+function myOnLoadCallback() {
+  // perform extra actions here
+}
+```
+
 `display` method accepts additional options as a keyword list, the options are:
 
 Option                  | Action                                                 | Default
 :---------------------- | :----------------------------------------------------- | :------------------------
 `noscript`              | Renders default noscript code provided by google       | `false`
 `public_key`            | Sets key to the `data-sitekey` reCaptcha div attribute | Public key from the config file
-
+`hl`                    | Sets the language of the reCaptcha                     | en
 
 ### Verify API
 
@@ -87,7 +119,7 @@ Recaptcha provides the `verify/2` method. Below is an example using a Phoenix co
 
 `{:ok, %Recaptcha.Response{challenge_ts: timestamp, hostname: host}}` -> The captcha is valid, see the [documentation](https://developers.google.com/recaptcha/docs/verify#api-response) for more details.
 
-`{:error, errors}` -> `errors` contains atomised versions of the errors returned by the API, See the [error documentation](https://developers.google.com/recaptcha/docs/verify#error-code-reference) for more details. Errors caused by timeouts in HTTPoison or Poison encoding are also returned as atoms. If the recaptcha request succeeds but the challenge is failed, a ``:challenge_failed` error is returned.
+`{:error, errors}` -> `errors` contains atomised versions of the errors returned by the API, See the [error documentation](https://developers.google.com/recaptcha/docs/verify#error-code-reference) for more details. Errors caused by timeouts in HTTPoison or Poison encoding are also returned as atoms. If the recaptcha request succeeds but the challenge is failed, a `:challenge_failed` error is returned.
 
 `verify` method also accepts a keyword list as the third parameter with the following options:
 
